@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hình Thành Kiến Thức</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .app-container {
+            background-color: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 1500px; 
+        }
+        .svg-canvas-wrapper {
+            width: 100%;
+            height: 480px; 
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #e0f6ff; 
+        }
+        .svg-glow-text {
+            filter: drop-shadow(0px 0px 3px #ffffff) drop-shadow(0px 0px 2px #ffffff) drop-shadow(0px 0px 4px #ffffff);
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .anim-element { transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        input[type="text"] { border: 1px solid #cbd5e1; text-align: center; transition: all 0.2s ease; outline: none; }
+        input[type="text"]:focus { border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
+        .student-input { 
+            width: 55px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, monospace; 
+            color: #1e293b; background-color: #ffffff; padding: 6px 2px; border-radius: 6px;
+            border: 2px solid #e2e8f0; font-size: 0.95rem;
+        }
+        .measure-input { color: #b91c1c; background-color: #fef2f2;}
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px 2px; text-align: center; transition: all 0.5s ease; }
+        th { background-color: #f8fafc; font-size: 0.8rem; color: #475569; font-weight: 700;}
+        td { color: #334155; font-size: 0.9rem;}
+        th.wide-col { white-space: nowrap; width: 120px; }
+        .mini-slider { height: 4px; border-radius: 2px; }
+        .correct-ans { border-color: #22c55e !important; background-color: #f0fdf4 !important; color: #166534 !important;}
+        .wrong-ans { border-color: #ef4444 !important; background-color: #fef2f2 !important; color: #991b1b !important;}
+        
+        /* HIỆU ỨNG MORPH CHẬM RÃI CHO CÔNG THỨC */
+        .morph-element {
+            display: inline-block;
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+        .morph-highlight {
+            transform: scale(1.3) translateY(-5px);
+            color: #ea580c; /* Màu cam nổi bật */
+            text-shadow: 0 4px 6px rgba(234, 88, 12, 0.3);
+        }
+        .morph-fade {
+            opacity: 0;
+            transform: scale(0.8) translateY(10px);
+            filter: blur(4px);
+        }
+        .fade-out { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+        .fade-in-up { animation: fadeInUp 0.7s ease forwards; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Nút bàn phím ảo */
+        .math-btn {
+            background-color: #f1f5f9; border: 1px solid #cbd5e1; color: #334155;
+            padding: 4px 12px; border-radius: 6px; font-weight: bold; font-family: serif;
+            transition: all 0.1s; cursor: pointer;
+        }
+        .math-btn:hover { background-color: #e2e8f0; border-color: #94a3b8; }
+        .math-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="p-2 md:p-6 font-sans text-gray-800 flex justify-center min-h-screen items-start">
+
+    <div class="app-container p-5 md:p-8 my-auto">
+        <div class="mb-6 border-b border-gray-200 pb-4">
+            <h1 class="text-3xl font-extrabold text-indigo-900 uppercase tracking-tight">HÌNH THÀNH KIẾN THỨC</h1>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+            <!-- Cột trái: Hình học & Điều khiển -->
+            <div class="flex flex-col h-full relative">
+                <div class="svg-canvas-wrapper shadow-inner relative">
+                    <svg id="triangle" viewBox="-50 0 650 400" class="w-full h-full">
+                        <defs>
+                            <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#7dd3fc" /><stop offset="100%" stop-color="#e0f2fe" />
+                            </linearGradient>
+                            <linearGradient id="oceanGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#0284c7" /><stop offset="30%" stop-color="#0ea5e9" /><stop offset="100%" stop-color="#38bdf8" />
+                            </linearGradient>
+                            <linearGradient id="landGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#4ade80" /><stop offset="100%" stop-color="#166534" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="-100" y="0" width="850" height="200" fill="url(#skyGrad)" />
+                        <rect x="-100" y="200" width="850" height="250" fill="url(#oceanGrad)" />
+                        <path d="M -100 230 Q -10 250 30 300 T 100 360 L 100 450 L -100 450 Z" fill="url(#landGrad)" stroke="#14532d" stroke-width="2"/>
+                        <rect x="30" y="325" width="75" height="20" rx="3" fill="#94a3b8" stroke="#475569" stroke-width="2"/>
+                        <rect x="40" y="345" width="12" height="50" fill="#64748b" />
+                        <rect x="75" y="345" width="12" height="50" fill="#64748b" />
+
+                        <path id="angle-marker" fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round" class="anim-element"/>
+
+                        <!-- Các đối tượng phụ trợ chứng minh Toán học (Ẩn mặc định) -->
+                        <g id="proof-elements" style="opacity: 0; transition: opacity 0.5s;">
+                            <line id="line-altitude" stroke="#f59e0b" stroke-width="3" stroke-dasharray="6,4" stroke-linecap="round"/>
+                            <path id="right-angle-mark" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" />
+                            <circle id="point-D" cx="0" cy="0" r="4" fill="#ea580c"/>
+                            <text id="label-D" font-size="18" font-weight="900" fill="#9a3412" class="svg-glow-text">D</text>
+                            <line id="line-CA-extend" stroke="#94a3b8" stroke-width="3" stroke-dasharray="4,4" />
+                        </g>
+
+                        <line id="lineAB" stroke="#f8fafc" stroke-width="3" stroke-dasharray="6,4" class="anim-element" />
+                        <line id="lineCA" stroke="#f8fafc" stroke-width="3" stroke-dasharray="6,4" class="anim-element" />
+                        <line id="lineBC" stroke="#ef4444" stroke-width="4" stroke-dasharray="8,5" stroke-linecap="round" class="anim-element" />
+                        
+                        <text x="90" y="318" font-size="32" dominant-baseline="central" text-anchor="middle">⚓</text>
+                        <text x="50" y="370" font-size="16" font-weight="900" fill="#0f172a" class="svg-glow-text text-center">Cảng A</text>
+                        <text id="shipEmojiC" font-size="34" dominant-baseline="central" text-anchor="middle" class="anim-element">🛳️</text>
+                        <text id="shipEmojiB" font-size="32" dominant-baseline="central" text-anchor="middle" class="anim-element">🚤</text>
+                        <text id="label-shipC" font-size="14" font-weight="900" fill="#1e293b" class="anim-element svg-glow-text text-center">Thuyền C</text>
+                        <text id="label-shipB" font-size="14" font-weight="900" fill="#1e293b" class="anim-element svg-glow-text text-center">Thuyền B</text>
+                        <text id="text-c" font-size="16" font-weight="900" fill="#1e293b" class="anim-element svg-glow-text text-center">c = 5</text>
+                        <text id="text-b" font-size="16" font-weight="900" fill="#1e293b" class="anim-element svg-glow-text text-center">b = 3</text>
+                        <text id="text-a" font-size="18" font-weight="900" fill="#b91c1c" class="anim-element svg-glow-text text-center">a = ?</text>
+                        <text id="text-angleA" font-size="16" font-weight="900" fill="#0f172a" class="anim-element svg-glow-text text-center">120°</text>
+                    </svg>
+                </div>
+
+                <div class="flex justify-between mt-4 items-center gap-2">
+                    <button onclick="measureA()" class="bg-red-50 text-red-700 border-2 border-red-300 hover:bg-red-100 font-bold py-3 px-4 rounded-xl shadow-sm transition-colors text-sm whitespace-nowrap h-full">
+                        📏 Đo a
+                    </button>
+                    <div class="flex gap-4 bg-white px-4 py-3 rounded-xl border border-gray-200 shadow-md w-full justify-between items-center ml-2">
+                        <div class="flex flex-col w-full px-1">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="font-bold text-xs text-gray-600">b:</label>
+                                <input type="text" id="input-b" value="3" class="w-12 text-xs p-1 font-mono font-bold text-indigo-700 bg-indigo-50" oninput="syncInputs('b', 'input')">
+                            </div>
+                            <input type="range" id="slider-b" min="1" max="10" value="3" step="0.01" class="w-full mini-slider accent-indigo-600" oninput="syncInputs('b', 'slider')">
+                        </div>
+                        <div class="flex flex-col w-full border-l border-gray-200 pl-3 px-1">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="font-bold text-xs text-gray-600">c:</label>
+                                <input type="text" id="input-c" value="5" class="w-12 text-xs p-1 font-mono font-bold text-indigo-700 bg-indigo-50" oninput="syncInputs('c', 'input')">
+                            </div>
+                            <input type="range" id="slider-c" min="1" max="10" value="5" step="0.01" class="w-full mini-slider accent-indigo-600" oninput="syncInputs('c', 'slider')">
+                        </div>
+                        <div class="flex flex-col w-full border-l border-gray-200 pl-3 px-1">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="font-bold text-xs text-gray-600">Góc A:</label>
+                                <input type="text" id="input-A" value="120" class="w-12 text-xs p-1 font-mono font-bold text-indigo-700 bg-indigo-50" oninput="syncInputs('A', 'input')">
+                            </div>
+                            <input type="range" id="slider-A" min="90" max="170" value="120" step="0.1" class="w-full mini-slider accent-indigo-600" oninput="syncInputs('A', 'slider')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Bảng số liệu & Chốt kiến thức -->
+            <div class="flex flex-col h-full gap-4">
+                <div class="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto h-full">
+                        <table id="data-table" class="m-0 border-hidden min-w-full">
+                            <thead>
+                                <tr>
+                                    <th class="bg-gray-100 uppercase">Nhóm</th>
+                                    <th>b</th>
+                                    <th>b²</th>
+                                    <th>c</th>
+                                    <th>c²</th>
+                                    <th>Góc A</th>
+                                    <th class="text-red-700 bg-red-50 whitespace-nowrap">Cạnh a (Đo)</th>
+                                    <th>a²</th>
+                                    <th id="col-dyn-th" class="text-amber-800 bg-amber-50 wide-col">BD² + CD²</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="data-row" id="row-1" data-angle="120">
+                                    <td class="font-bold text-gray-700">Nhóm 1</td>
+                                    <td><input type="text" class="student-input input-b-table" placeholder="?" oninput="updateRowValues(this)"></td>
+                                    <td class="res-b2 font-bold text-gray-800 bg-slate-50">-</td>
+                                    <td><input type="text" class="student-input input-c-table" placeholder="?" oninput="updateRowValues(this)"></td>
+                                    <td class="res-c2 font-bold text-gray-800 bg-slate-50">-</td>
+                                    <td class="whitespace-nowrap font-bold text-gray-800">120°</td>
+                                    <td class="bg-red-50"><input type="text" class="student-input measure-input input-a" placeholder="?" oninput="updateRowValues(this)"></td>
+                                    <td class="res-a2 font-bold text-gray-800 bg-slate-50">-</td>
+                                    <td id="col-dyn-td" class="res-calc font-bold text-amber-700 bg-amber-50">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="feedback-panel" class="hidden p-3 rounded-lg font-bold text-center border-2 shadow-sm text-sm"></div>
+
+                <button id="btn-verify" onclick="verify()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-extrabold text-xl tracking-wide hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">
+                    XÁC NHẬN SỐ LIỆU
+                </button>
+                
+                <!-- Khu vực tương tác câu hỏi chứng minh (Morphing) -->
+                <div id="q-container" class="hidden p-4 bg-white border-2 border-blue-200 rounded-xl shadow-md transition-all duration-500">
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl mt-1">💡</span>
+                        <div class="flex-grow">
+                            <span id="q-text" class="block text-gray-800 font-medium text-base mb-2">Vì sao <b>a² = BD² + CD²</b> ?</span>
+                            
+                            <!-- Input và Nút bấm -->
+                            <div class="flex gap-2 relative">
+                                <input type="text" id="q-input" class="w-full p-2 border-2 border-blue-300 rounded font-bold text-blue-800 text-sm focus:border-blue-500 outline-none transition" placeholder="Nhập câu trả lời..." onfocus="showKeyboard()" onkeypress="if(event.key === 'Enter') checkQ()">
+                                <button onclick="checkQ()" class="bg-blue-600 text-white px-4 rounded text-sm font-bold hover:bg-blue-700 transition shadow">Chốt</button>
+                            </div>
+                            
+                            <!-- Bàn phím Toán học ảo (ẩn mặc định) -->
+                            <div id="math-keyboard" class="mt-2 flex flex-wrap gap-1.5 hidden bg-slate-50 p-2 rounded-lg border border-slate-200 shadow-sm">
+                                <span class="text-xs text-slate-500 w-full mb-1">Máy tính mini:</span>
+                                <button class="math-btn" onclick="insertMath('²')">²</button>
+                                <button class="math-btn" onclick="insertMath('+')">+</button>
+                                <button class="math-btn" onclick="insertMath('-')">-</button>
+                                <button class="math-btn" onclick="insertMath('c')">c</button>
+                                <button class="math-btn" onclick="insertMath('b')">b</button>
+                                <button class="math-btn" onclick="insertMath('DA')">DA</button>
+                                <button class="math-btn" onclick="insertMath('CD')">CD</button>
+                                <button class="math-btn" onclick="insertMath('BD')">BD</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Khu vực Công thức trống ở dưới (Đợi để bay xuống) -->
+                <div id="proof-box" class="hidden p-5 bg-amber-50 border-2 border-amber-300 rounded-xl shadow-inner mt-2 min-h-[120px] flex items-center justify-center">
+                    <div class="font-serif text-3xl font-bold text-indigo-900 tracking-wide text-center flex items-center gap-1">
+                        <span>a² = </span>
+                        <span id="f-part1" class="morph-element ml-1">BD²</span> 
+                        <span id="f-plus" class="morph-element"> + </span> 
+                        <span id="f-part2" class="morph-element">CD²</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isAMeasured = false;
+        let currentProofStep = 0;
+
+        // Dữ liệu Nhóm 1 mặc định (Bắt buộc góc tù để CD = DA + b)
+        const groupData = [ { b: 3, c: 5, A: 120 } ];
+
+        function formatNum(num) {
+            let rounded = Math.round(num * 100) / 100;
+            return Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2).replace('.', ',');
+        }
+
+        function parseLocalFloat(val) {
+            if (typeof val === 'string') {
+                if (val.trim() === '') return NaN;
+                return parseFloat(val.replace(/,/g, '.'));
+            }
+            return parseFloat(val);
+        }
+
+        function syncInputs(param, source) {
+            const slider = document.getElementById(`slider-${param}`);
+            const input = document.getElementById(`input-${param}`);
+            if (source === 'slider') input.value = slider.value.replace('.', ',');
+            else if (source === 'input') {
+                let val = parseLocalFloat(input.value);
+                if (!isNaN(val)) slider.value = val;
+            }
+            isAMeasured = false;
+            updateTriangle(); 
+        }
+
+        function measureA() {
+            isAMeasured = true;
+            updateTriangle();
+        }
+
+        function updateRowValues(inputElement) {
+            const row = inputElement.closest('tr');
+            const b = parseLocalFloat(row.querySelector('.input-b-table').value);
+            const c = parseLocalFloat(row.querySelector('.input-c-table').value);
+            const a = parseLocalFloat(row.querySelector('.input-a').value);
+            
+            row.querySelector('.res-b2').innerText = !isNaN(b) ? formatNum(b * b) : '-';
+            row.querySelector('.res-c2').innerText = !isNaN(c) ? formatNum(c * c) : '-';
+            row.querySelector('.res-a2').innerText = !isNaN(a) ? formatNum(a * a) : '-';
+        }
+
+        function updateTriangle() {
+            const b = parseLocalFloat(document.getElementById('input-b').value) || 0;
+            const c = parseLocalFloat(document.getElementById('input-c').value) || 0;
+            const angleDeg = parseLocalFloat(document.getElementById('input-A').value) || 0;
+            const angleRadReal = angleDeg * Math.PI / 180;
+            const aVal = Math.sqrt((b * b) + (c * c) - (2 * b * c * Math.cos(angleRadReal)));
+
+            const Ax = 90, Ay = 330, scale = 22; 
+            const Cx = Ax + b * scale * Math.cos(angleRadReal);
+            const Cy = Ay - b * scale * Math.sin(angleRadReal);
+            const Bx = Ax + c * scale;
+            const By = Ay;
+
+            document.getElementById('lineAB').setAttribute('x1', Ax); document.getElementById('lineAB').setAttribute('y1', Ay); document.getElementById('lineAB').setAttribute('x2', Bx); document.getElementById('lineAB').setAttribute('y2', By);
+            document.getElementById('lineBC').setAttribute('x1', Bx); document.getElementById('lineBC').setAttribute('y1', By); document.getElementById('lineBC').setAttribute('x2', Cx); document.getElementById('lineBC').setAttribute('y2', Cy);
+            document.getElementById('lineCA').setAttribute('x1', Cx); document.getElementById('lineCA').setAttribute('y1', Cy); document.getElementById('lineCA').setAttribute('x2', Ax); document.getElementById('lineCA').setAttribute('y2', Ay);
+
+            document.getElementById('shipEmojiC').setAttribute('transform', `translate(${Cx}, ${Cy}) scale(-1, 1)`);
+            document.getElementById('shipEmojiB').setAttribute('transform', `translate(${Bx}, ${By}) scale(-1, 1)`);
+
+            document.getElementById('label-shipB').setAttribute('x', Bx); document.getElementById('label-shipB').setAttribute('y', By + 35); 
+            document.getElementById('label-shipC').setAttribute('x', Cx); document.getElementById('label-shipC').setAttribute('y', Cy - 30); 
+
+            const textC = document.getElementById('text-c'); textC.setAttribute('x', (Ax + Bx) / 2); textC.setAttribute('y', Ay + 25); textC.textContent = `c = ${formatNum(c)}`;
+            const textB = document.getElementById('text-b'); textB.setAttribute('x', (Ax + Cx) / 2 - 35); textB.setAttribute('y', (Ay + Cy) / 2 - 10); textB.textContent = `b = ${formatNum(b)}`;
+            const textA = document.getElementById('text-a'); textA.setAttribute('x', (Bx + Cx) / 2 + 35); textA.setAttribute('y', (By + Cy) / 2 - 20);
+            textA.textContent = isAMeasured ? `a = ${formatNum(aVal)}` : `a = ?`;
+
+            const r = 32; const marker = document.getElementById('angle-marker');
+            const endX = Ax + r * Math.cos(angleRadReal); const endY = Ay - r * Math.sin(angleRadReal);
+            marker.setAttribute('d', `M ${Ax + r} ${Ay} A ${r} ${r} 0 0 0 ${endX} ${endY}`);
+
+            const halfAngleRad = angleRadReal / 2; const textOffset = 55; 
+            const angleText = document.getElementById('text-angleA');
+            angleText.setAttribute('x', Ax + textOffset * Math.cos(halfAngleRad) - 12); 
+            angleText.setAttribute('y', Ay - textOffset * Math.sin(halfAngleRad) + 8); 
+            angleText.textContent = `${formatNum(angleDeg)}°`;
+
+            // Vẽ tự động đường cao BD
+            const uX = Math.cos(angleRadReal), uY = -Math.sin(angleRadReal);
+            const AD_algebraic = c * scale * Math.cos(angleRadReal);
+            const Dx = Ax + AD_algebraic * uX, Dy = Ay + AD_algebraic * uY;
+
+            document.getElementById('line-altitude').setAttribute('x1', Bx); document.getElementById('line-altitude').setAttribute('y1', By); document.getElementById('line-altitude').setAttribute('x2', Dx); document.getElementById('line-altitude').setAttribute('y2', Dy);
+            document.getElementById('point-D').setAttribute('cx', Dx); document.getElementById('point-D').setAttribute('cy', Dy);
+            document.getElementById('label-D').setAttribute('x', Dx - 10); document.getElementById('label-D').setAttribute('y', Dy + 25);
+
+            const extendLine = document.getElementById('line-CA-extend');
+            if (Math.cos(angleRadReal) < 0) {
+                extendLine.setAttribute('x1', Ax); extendLine.setAttribute('y1', Ay); extendLine.setAttribute('x2', Dx); extendLine.setAttribute('y2', Dy); extendLine.style.opacity = 1;
+            } else extendLine.style.opacity = 0;
+
+            const sign = Math.cos(angleRadReal) >= 0 ? -1 : 1; const rSq = 12;
+            const lenDB = Math.hypot(Bx - Dx, By - Dy);
+            const nDB_x = lenDB > 0 ? (Bx - Dx) / lenDB : 0; const nDB_y = lenDB > 0 ? (By - Dy) / lenDB : 0;
+            document.getElementById('right-angle-mark').setAttribute('d', `M ${Dx + rSq * sign * uX} ${Dy + rSq * sign * uY} L ${Dx + rSq * sign * uX + rSq * nDB_x} ${Dy + rSq * sign * uY + rSq * nDB_y} L ${Dx + rSq * nDB_x} ${Dy + rSq * nDB_y}`);
+        }
+
+        function showFeedback(msg, type) {
+            let fb = document.getElementById('feedback-panel');
+            fb.innerHTML = msg;
+            fb.className = `p-3 mb-2 rounded-lg font-bold text-center border-2 shadow-sm text-sm ${type === 'error' ? 'bg-red-50 text-red-700 border-red-300' : 'bg-green-50 text-green-700 border-green-300'}`;
+            fb.classList.remove('hidden');
+        }
+
+        // --- CÁC HÀM XỬ LÝ NHẬP TOÁN HỌC ---
+        function showKeyboard() {
+            document.getElementById('math-keyboard').classList.remove('hidden');
+        }
+
+        function insertMath(char) {
+            const inputField = document.getElementById('q-input');
+            const start = inputField.selectionStart;
+            const end = inputField.selectionEnd;
+            const text = inputField.value;
+            // Chèn ký tự tại con trỏ
+            inputField.value = text.slice(0, start) + char + text.slice(end);
+            // Đưa con trỏ về sau ký tự vừa chèn
+            inputField.focus();
+            inputField.selectionStart = inputField.selectionEnd = start + char.length;
+        }
+
+        // --- HÀM THỰC THI HIỆU ỨNG MORPH CHẬM ---
+        // elementId: ID của span cần đổi
+        // newText: Chữ mới
+        // nextAction: Hàm gọi tiếp theo sau khi morph xong để đổi câu hỏi
+        function slowMorph(elementId, newText, nextAction) {
+            let el = document.getElementById(elementId);
+            
+            // 1. Sáng và phóng to lên để thu hút sự chú ý
+            el.classList.add('morph-highlight');
+            
+            // Đợi 1 giây cho học sinh nhìn
+            setTimeout(() => {
+                // 2. Làm mờ đi
+                el.classList.add('morph-fade');
+                
+                // Đợi 0.6 giây để mờ hẳn rồi đổi chữ
+                setTimeout(() => {
+                    el.innerHTML = newText;
+                    
+                    // 3. Rõ dần lên
+                    el.classList.remove('morph-fade');
+                    
+                    // Đợi 1 giây để học sinh đọc chữ mới, sau đó thu nhỏ về bình thường
+                    setTimeout(() => {
+                        el.classList.remove('morph-highlight');
+                        
+                        // 4. Đổi câu hỏi (nếu có)
+                        if (nextAction) nextAction();
+                    }, 1200);
+                }, 600);
+            }, 1000);
+        }
+
+
+        // --- LOGIC KIỂM TRA BÀI LÀM ---
+        function verify() {
+            document.getElementById('feedback-panel').classList.add('hidden');
+            let row = document.getElementById('row-1');
+            const trueB = 3, trueC = 5, trueA = Math.sqrt(9 + 25 - 2*15*Math.cos(120*Math.PI/180));
+            const inB = parseLocalFloat(row.querySelector('.input-b-table').value);
+            const inC = parseLocalFloat(row.querySelector('.input-c-table').value);
+            const inA = parseLocalFloat(row.querySelector('.input-a').value);
+
+            if (isNaN(inB) || isNaN(inC) || isNaN(inA)) {
+                showFeedback(`Con đang điền dở dang, hãy điền đầy đủ nhé!`, 'error'); return;
+            }
+            if (Math.abs(inB - trueB) > 0.1 || Math.abs(inC - trueC) > 0.1) {
+                showFeedback(`Hãy nhập đúng thông số Nhóm 1 (b=3, c=5) trên bảng điều khiển!`, 'error'); return;
+            }
+            if (Math.abs(inA - trueA) > 0.1) {
+                showFeedback(`Cạnh a đo chưa chính xác! Bấm "Đo a" trên hình vẽ.`, 'error'); return;
+            }
+
+            // Hoàn hảo, bắt đầu bước 1
+            row.querySelectorAll('input.student-input').forEach(inp => inp.readOnly = true);
+            document.getElementById('btn-verify').classList.add('hidden');
+            
+            // Hiện đường cao & tính toán cho cột BD^2 + CD^2
+            document.getElementById('proof-elements').style.opacity = '1';
+            let formattedA2 = formatNum(trueA * trueA);
+            document.getElementById('col-dyn-td').innerText = formattedA2;
+            
+            document.getElementById('q-container').classList.remove('hidden');
+            currentProofStep = 1;
+        }
+
+        function checkQ() {
+            let rawInput = document.getElementById('q-input').value.toLowerCase();
+            let input = rawInput.replace(/\s/g, '');
+
+            if (currentProofStep === 1) {
+                if (input.includes('pytago') || input.includes('pitago') || input.includes('pythagore')) {
+                    advanceToStep2();
+                } else alert("Chưa chính xác! Gợi ý: Định lí nào áp dụng cho tam giác vuông BDC?");
+            }
+            else if (currentProofStep === 2) {
+                // Kiểm tra c² - DA²
+                if (input.includes('c²-da²') || input.includes('c^2-da^2') || input.includes('c2-da2')) {
+                    advanceToStep3();
+                } else alert("Chưa chính xác! (Gợi ý: Hãy dùng Pytago cho tam giác vuông BDA)");
+            }
+            else if (currentProofStep === 3) {
+                // Kiểm tra DA + b hoặc b + DA
+                if (input.includes('da+b') || input.includes('b+da')) {
+                    advanceToStep4();
+                } else alert("Chưa chính xác! (Gợi ý: Nhìn hình vẽ đoạn CD bao gồm 2 đoạn DA và b cộng lại)");
+            }
+        }
+
+        function advanceToStep2() {
+            currentProofStep = 2;
+            document.getElementById('q-input').value = "";
+            document.getElementById('math-keyboard').classList.add('hidden'); // Ẩn bàn phím khi chuyển câu
+            
+            // Morph bảng: Ẩn cột tính toán
+            document.getElementById('col-dyn-th').classList.add('fade-out');
+            document.getElementById('col-dyn-td').classList.add('fade-out');
+            
+            // Bay công thức xuống box
+            let pBox = document.getElementById('proof-box');
+            pBox.classList.remove('hidden');
+            pBox.classList.add('fade-in-up');
+            
+            // Thay đổi câu hỏi bằng hiệu ứng mờ đi rồi hiện lại
+            let qText = document.getElementById('q-text');
+            qText.style.opacity = 0;
+            setTimeout(() => {
+                qText.innerHTML = "Tương tự em hãy tính <b>BD²</b> theo <b>DA²</b> và <b>c²</b>";
+                qText.style.opacity = 1;
+            }, 300);
+        }
+
+        function advanceToStep3() {
+            currentProofStep = 3;
+            document.getElementById('q-input').value = "";
+            document.getElementById('math-keyboard').classList.add('hidden');
+            document.getElementById('q-input').readOnly = true; // Khóa tạm input để học sinh tập trung nhìn hiệu ứng
+            
+            // Gọi hàm thực thi Morph chậm
+            slowMorph('f-part1', '(c² - DA²)', function() {
+                // Hành động diễn ra sau khi Morph thành công
+                let qText = document.getElementById('q-text');
+                qText.style.opacity = 0;
+                setTimeout(() => {
+                    qText.innerHTML = "Tính độ dài <b>CD</b> theo <b>DA</b> và <b>b</b>";
+                    qText.style.opacity = 1;
+                    document.getElementById('q-input').readOnly = false; // Mở lại input
+                }, 400);
+            });
+        }
+
+        function advanceToStep4() {
+            currentProofStep = 4;
+            document.getElementById('q-input').readOnly = true;
+            document.getElementById('math-keyboard').classList.add('hidden');
+
+            // Gọi hàm Morph chậm cho phần CD
+            slowMorph('f-part2', '(DA + b)²', function() {
+                // Ẩn luôn bảng câu hỏi sau khi học sinh xem xong
+                let qContainer = document.getElementById('q-container');
+                qContainer.style.transform = "scaleY(0)";
+                qContainer.style.opacity = "0";
+                setTimeout(() => qContainer.style.display = 'none', 600);
+            });
+        }
+        
+        updateTriangle();
+    </script>
+</body>
+</html>

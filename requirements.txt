@@ -1,0 +1,6 @@
+streamlit
+google-generativeai
+Pillow
+numpy
+streamlit-drawable-canvas
+streamlit-mic-recorder
