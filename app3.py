@@ -882,7 +882,7 @@ elif st.session_state.current_page == "workspace":
             st.rerun()
     
     # === CẤU HÌNH AI & PROMPT (GIỮ NGUYÊN 100%) ===
-    api_key = "AQ.Ab8RN6JUI1s_qHLxVMy5I3tn_XWrXrqBwSZCgWxG2OEHJzhnhg"
+    api_key = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-3.5-flash-lite')
     
